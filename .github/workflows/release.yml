@@ -1,0 +1,39 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # zips are structured so users can extract directly into the platform's install root:
+      #   critical-skill-claude.zip  -> extract to .claude/skills/  -> .claude/skills/critical/SKILL.md
+      #   critical-skill-trae.zip    -> extract to .trae/skills/    -> .trae/skills/critical-skill/SKILL.md
+      #   critical-skill-cursor.zip  -> extract to .cursor/rules/  -> .cursor/rules/critical.md
+
+      - name: Package Claude
+        run: (cd skills && zip -r ../critical-skill-claude.zip critical)
+
+      - name: Package Trae
+        run: (cd .trae/skills && zip -r ../../critical-skill-trae.zip critical-skill)
+
+      - name: Package Cursor
+        run: (cd .cursor/rules && zip ../../critical-skill-cursor.zip critical.md)
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            critical-skill-claude.zip
+            critical-skill-trae.zip
+            critical-skill-cursor.zip
+          fail_on_unmatched_files: true
+          generate_release_notes: true
